@@ -27,7 +27,7 @@ body { margin: 0; padding: 0; }
 		color: silver;
 		/* add glow */
 		text-shadow: 0 0 10px black;
-		transform: translate(-50%, 10%);
+		transform: translate(-50%, 15%);
 		/* background-color: #ffffff; */
 		/* border: 2px solid #000000; */
 		/* border-radius: 5px; */
@@ -36,6 +36,16 @@ body { margin: 0; padding: 0; }
 		font-family:'Trebuchet MS', 'Lucida Sans Unicode', 'Lucida Grande', 'Lucida Sans', Arial, sans-serif;
 	}
 	.logo {
+		position: absolute;
+		top: 50;
+		left: 50%;
+		transform: translate(-50%, 5%);
+		width: 500px;
+		/* height: 200px; */
+		text-shadow: 0 0 10px black;
+
+	}
+	.sublogo {
 		position: absolute;
 		top: 10;
 		left: 50%;
@@ -76,34 +86,17 @@ body { margin: 0; padding: 0; }
 
 <div id="map"></div>
 
-<img class="logo" src="images/LOGO.svg" alt="NHUMA" >
-
-<!-- overlay LOGO.svg on the map -->
-
-
-
-
-<!-- overlay a big title with the words NHUMA -->
-<!-- <div id="custom-marker">NHUMA</div> -->
+<img class="logo" src="images/nhuma-logo.svg" alt="NHUMA" >
+<!-- <img class="logo" src="images/LOGO.svg" alt="NHUMA" > -->
+<!-- <img class="logo" src="images/cs.svg" alt="NHUMA" > -->
 
 
 <script>
    var nhuma = [140.023,35.86377602309919]
 
-
 	function getRandomOffset() {
 	  return (Math.random() - 0.5) * 0.0015;  // Random offset within +/- 0.001 degrees
 	}
-
-	// Base coordinate
-	// var nhuma = [140.01, 35.86377602309919];
-
-	// Generate 5 random coordinates within a 0.001 degree radius
-	var m1 = [nhuma[0] + getRandomOffset(), nhuma[1] + getRandomOffset()];
-	var m2 = [nhuma[0] + getRandomOffset(), nhuma[1] + getRandomOffset()];
-	var m3 = [nhuma[0] + getRandomOffset(), nhuma[1] + getRandomOffset()];
-	var m4 = [nhuma[0] + getRandomOffset(), nhuma[1] + getRandomOffset()];
-	var m5 = [nhuma[0] + getRandomOffset(), nhuma[1] + getRandomOffset()];
    
    // function to create a list of 2 numbers for the icon size
 	function getRandomIconSize() {
@@ -209,22 +202,11 @@ body { margin: 0; padding: 0; }
 			.addTo(map);
 
 		// on hover, show the image of the marker
-		el.addEventListener('mouseover', () => {
-			// el.style.backgroundImage = `url('${marker.properties.filename}')`;
+		el.addEventListener('mouseover', () => {            
 			el.style.backgroundImage = `url('${marker.properties.hover_image}')`;
 			el.style.width = `150px`;
 			el.style.height = `150px`;
 			el.style.backgroundSize = '100%';
-
-			// add a pop-up
-			popup = new mapboxgl.Popup({ offset: -80 })
-				// position it higher than the marker
-				
-
-				.setLngLat(marker.geometry.coordinates)
-				.setHTML('<h3>' + marker.properties.message + '</h3>')
-				.addTo(map);
-
 
 		});
 		// on mouseout, show the icon of the marker
@@ -234,8 +216,6 @@ body { margin: 0; padding: 0; }
 			el.style.height = `${height}px`;
 			el.style.backgroundSize = '100%';
 
-			// remove popup
-			popup.remove();
 		});
 	}
 </script>
