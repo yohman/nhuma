@@ -128,7 +128,7 @@ body { margin: 0; padding: 0; }
 					 'message': face,
 					 'iconSize': getRandomIconSize(),
 					 'filename': 'images/'+face+'.png',
-					//  'hover_image': 'josephine.png'
+					 'hover_image': 'images/yumico.gif'
 				},
 				'geometry': {
 					 'type': 'Point',
@@ -210,8 +210,8 @@ body { margin: 0; padding: 0; }
 
 		// on hover, show the image of the marker
 		el.addEventListener('mouseover', () => {
-			el.style.backgroundImage = `url('${marker.properties.filename}')`;
-			// el.style.backgroundImage = `url('${marker.properties.hover_image}')`;
+			// el.style.backgroundImage = `url('${marker.properties.filename}')`;
+			el.style.backgroundImage = `url('${marker.properties.hover_image}')`;
 			el.style.width = `150px`;
 			el.style.height = `150px`;
 			el.style.backgroundSize = '100%';
