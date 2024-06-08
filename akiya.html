@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Interactive Map</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.4.0/mapbox-gl.js"></script>
+    
+
+    <style>
+        body { margin: 0; padding: 0; }
+        #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoieW9obWFuIiwiYSI6IkxuRThfNFkifQ.u2xRJMiChx914U7mOZMiZw';
+
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/yohman/clx5h8kum004701mw0sf52ery',
+            // mapbox://styles/yohman/clx5h8kum004701mw0sf52ery
+            
+            center: [140.017925,35.864473], // Set the initial center coordinates
+            zoom: 17 // Set the initial zoom level
+        });
+
+        // map.on('load', function() {
+        //     map.addSource('my-data', {
+        //         type: 'geojson',
+        //         data: 'akiya1.geojson'
+        //     });
+
+        //     // add layer to the map as a point layer
+        //     map.addLayer({
+        //         id: 'my-layer',
+        //         source: 'my-data',
+        //         type: 'fill',
+        //         paint: {
+        //             'fill-color': '#088',
+        //             'fill-opacity': 0.8
+        //         }
+        //     });
+
+
+
+        // });
+    </script>
+</body>
+</html>
