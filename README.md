@@ -9,7 +9,8 @@ This conceptual landing page for C's opens a world full of NHUMA people. It star
 
 ## NHUMA, the movie
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/75hCsplgKlU?si=dINbs--04GmX3RW1" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+[![alt text](image-3.png)](https://www.youtube.com/embed/75hCsplgKlU?si=dINbs--04GmX3RW1)
+[Watch](https://www.youtube.com/embed/75hCsplgKlU?si=dINbs--04GmX3RW1)
 
 On June 15, 2024, a group of people from all walks of life joined together at NHUMA's Marce, enjoying a time of creative activities: crafting, exchanging, and sharing stories.
 
