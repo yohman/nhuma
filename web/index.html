@@ -15,7 +15,7 @@ body { margin: 0; padding: 0; }
 <style>
 	.marker {
 		display: block;
-		border: 4px solid #ffffff; 
+		border: 2px solid #ffffff; 
 		border-radius: 50%;
 		cursor: pointer;
 		padding: 0;
@@ -101,7 +101,7 @@ body { margin: 0; padding: 0; }
    
    // function to create a list of 2 numbers for the icon size
 	function getRandomIconSize() {
-		const size = Math.floor(Math.random() * 60) + 40;
+		const size = Math.floor(Math.random() * 60) + 20;
 		return [size, size];
 	}
 
@@ -149,10 +149,10 @@ body { margin: 0; padding: 0; }
 		// マップのアニメーション
 		map.flyTo({
 			center: nhuma,
-			zoom: 18,
+			zoom: 17,
 			speed: 0.5,
 			curve: 1,
-			pitch: 85,
+			pitch: 75,
 			// bearing: -45
 		});
 	});
