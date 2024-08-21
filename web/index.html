@@ -94,6 +94,7 @@ body { margin: 0; padding: 0; }
 
 <script>
    var nhuma = [140.023,35.86377602309919]
+   var nhuma2 = [140.023,35.864]
 
 	function getRandomOffset() {
 	  return (Math.random() - 0.5) * 0.0015;  // Random offset within +/- 0.001 degrees
@@ -148,7 +149,7 @@ body { margin: 0; padding: 0; }
 	map.on('load', function () {
 		// マップのアニメーション
 		map.flyTo({
-			center: nhuma,
+			center: nhuma2,
 			zoom: 17,
 			speed: 0.5,
 			curve: 1,
