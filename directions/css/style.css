@@ -28,10 +28,21 @@ body {
 	font-size: 10px;
 	color: #fff;
 	background-color: #333;
-	border-radius: 5px;
+	border-radius: 0px;
 	padding: 5px;
 	left: 65px;
 	top: 40px;
+	font-family: 'Courier New', Courier, monospace;
+}
+
+.marker-label-destination .mapboxgl-popup-content {
+	/* font-size: 10px;
+	color: #fff;
+	background-color: #878782;
+	border-radius: 0px;
+	padding: 5px;
+	left: 65px;
+	top: 40px; */
 	font-family: 'Courier New', Courier, monospace;
 }
 
@@ -46,19 +57,79 @@ body {
     display: none;
 }
 
-.controls {
+/* .controls {
 	position: absolute;
 	bottom: 20px;
 	left: 50%;
 	transform: translateX(-50%);
 	display: flex;
 	gap: 10px;
+} */
+
+#sliderContainer {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50%;
+    display: none; /* Hide the slider container initially */
+    align-items: center;
+    gap: 10px; /* Add spacing between button and slider */
+}
+
+#progressSlider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 8px;
+    background: #FF5A16; /* Updated slider color */
+    border-radius: 4px;
+    outline: none;
+}
+
+#progressSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: #FF5A16; /* Slider handle color */
+    border: 2px solid white; /* White circle inside */
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+}
+
+#progressSlider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: #FF5A16; /* Slider handle color */
+    border: 2px solid white; /* White circle inside */
+    border-radius: 50%;
+    cursor: pointer;
+    position: relative;
+}
+
+#playPauseButton {
+	width: 60px;
+	height: 30px;
+	background-color: #FF5A16; /* Updated color */
+	color: white;
+	border: none;
+	font-size: 14px;
+	cursor: pointer;
+	transition: background-color 0.3s;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+}
+
+#playPauseButton:hover {
+	background-color: #FF7A33; /* Darker shade for hover */
 }
 
 .controls button {
 	width: 30px;
 	height: 30px;
-	background-color: #007bff;
+	background-color: #FF5A16; /* Updated color */
 	color: white;
 	border: none;
 	/* border-radius: 5px; */
@@ -68,5 +139,30 @@ body {
 }
 
 .controls button:hover {
-	background-color: #0056b3;
+	background-color: #FF7A33; /* Darker shade for hover */
+}
+
+#startButton {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 100px;
+	height: 100px;
+	background-color: rgba(255, 90, 22, 0.8); /* Updated color */
+	border: none;
+	border-radius: 50%;
+	color: white;
+	font-size: 50px;
+	cursor: pointer;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	z-index: 10; /* Ensure it stays above the map */
+	transition: background-color 0.3s, transform 0.3s;
+}
+
+#startButton:hover {
+	background-color: rgba(255, 90, 22, 1); /* Updated color */
+	transform: translate(-50%, -50%) scale(1.1);
 }

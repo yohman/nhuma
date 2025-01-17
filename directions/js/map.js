@@ -142,19 +142,20 @@ map.on('load', () => {
 		source: 'route',
 		layout: { 'line-cap': 'round', 'line-join': 'round' },
 		paint: {
-			'line-color': '#ff0000',
-			'line-width': 5
+			'line-color': '#FF5A16',
+			'line-width': 8,
+			'line-opacity': 0.5
 		}
 	});
 
 	// Create a moving marker
-	const marker = new mapboxgl.Marker()
+	const marker = new mapboxgl.Marker({ color: '#FF5A16' })
 		.setLngLat(route.geometry.coordinates[0])
 		.addTo(map);
 
 	// Smooth marker animation
 	let progress = 0; // Between 0 and 1
-	const animationSpeed = 0.0007; // Set the animation speed (default is slower)
+	const animationSpeed = 0.0009; // Set the animation speed (default is slower)
 
 	function interpolate(p1, p2, t) {
 		return [p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1])];
@@ -186,17 +187,11 @@ map.on('load', () => {
 		markerLabel.setLngLat(marker.getLngLat());
 	}
 
-	// 1) Inject buttons
-	// document.body.insertAdjacentHTML('beforeend', `
-	// 	<button id="playBtn">Play</button>
-	// 	<button id="pauseBtn">Pause</button>
-	// 	<button id="restartBtn">Restart</button>
-	// `);
-
 	let isPaused = false;
+	let pausedByButton = false;
 	let animationId;
 
-	function smoothAnimateMarker() {
+	function smoothAnimateMarker(manual = false) {
 		const totalDistance = route.geometry.coordinates.reduce((acc, curr, index, arr) => {
 			if (index === 0) return acc;
 			const prev = arr[index - 1];
@@ -226,38 +221,98 @@ map.on('load', () => {
 
 		marker.setLngLat(interpolate(start, end, t));
 		updateMarkerLabel();
-		if (!isPaused) {
+		// Replace setCenter with jumpTo without altering zoom level
+		map.jumpTo({
+			center: marker.getLngLat()
+			// zoom: 16 // Removed to keep user's zoom level
+		});
+
+		// Always update slider value
+		slider.value = (progress * 100).toFixed(0);
+
+		if (!isPaused && progress < 1) {
 			progress += animationSpeed;
-			if (progress < 1) {
-				animationId = requestAnimationFrame(smoothAnimateMarker);
-			}
+			if (progress > 1) progress = 1;
+			animationId = requestAnimationFrame(smoothAnimateMarker);
+		} else if (progress >= 1) {
+			// Snap to final destination and slider = 100
+			progress = 1;
+			marker.setLngLat(route.geometry.coordinates[route.geometry.coordinates.length - 1]);
+			slider.value = 100;
+			playPauseButton.textContent = 'Replay'; // Set button to "Replay" when animation ends
 		}
 	}
 
-	// 2) Button event handlers
-	document.getElementById('play').addEventListener('click', () => {
-		isPaused = false;
-		if (progress < 1) {
+	const slider = document.getElementById('progressSlider');
+	const playPauseButton = document.getElementById('playPauseButton');
+
+	playPauseButton.addEventListener('click', () => {
+		if (progress >= 1) {
+			// Restart the animation
+			progress = 0;
+			slider.value = 0;
+			marker.setLngLat(route.geometry.coordinates[0]);
+			markerLabel.setLngLat(route.geometry.coordinates[0]);
+			markerLabel.setText("0 seconds");
+			isPaused = false;
+			pausedByButton = false;
+			playPauseButton.textContent = 'Pause';
+			animationId = requestAnimationFrame(smoothAnimateMarker);
+		} else if (!isPaused) {
+			isPaused = true;
+			pausedByButton = true;
+			playPauseButton.textContent = 'Play';
+			if (animationId) cancelAnimationFrame(animationId);
+		} else {
+			isPaused = false;
+			pausedByButton = false;
+			playPauseButton.textContent = 'Pause';
+			if (progress < 1) animationId = requestAnimationFrame(smoothAnimateMarker);
+		}
+	});
+
+	slider.addEventListener('mousedown', () => {
+		isPaused = true;
+		if (animationId) cancelAnimationFrame(animationId);
+	});
+
+	slider.addEventListener('input', (e) => {
+		// Convert slider value [0..100] to progress [0..1]
+		progress = e.target.value / 100;
+		smoothAnimateMarker(true); // true indicates manual slider move
+	});
+
+	slider.addEventListener('mouseup', () => {
+		if (!pausedByButton && progress < 1) {
+			isPaused = false;
+			playPauseButton.textContent = 'Pause';
 			animationId = requestAnimationFrame(smoothAnimateMarker);
 		}
 	});
 
-	document.getElementById('pause').addEventListener('click', () => {
-		isPaused = true;
-		if (animationId) {
-			cancelAnimationFrame(animationId);
-		}
-	});
+	// Add event listener for the central play button
+	const startButton = document.getElementById('startButton');
+	startButton.addEventListener('click', () => {
+		// Hide the start button
+		startButton.style.display = 'none';
+		
+		 // Show the slider container
+        document.getElementById('sliderContainer').style.display = 'flex';
+		
+		// Fly to the start location
+		map.flyTo({
+			center: route.geometry.coordinates[0],
+			zoom: 16,
+			speed: 0.5,
+			curve: 1
+		});
 
-	document.getElementById('restart').addEventListener('click', () => {
-		isPaused = false;
-		progress = 0;
-		marker.setLngLat(route.geometry.coordinates[0]);
-		animationId = requestAnimationFrame(smoothAnimateMarker);
+		// Start the animation after flyTo completes
+		map.once('moveend', () => {
+			animationId = requestAnimationFrame(smoothAnimateMarker);
+			playPauseButton.textContent = 'Pause'; // Set button to "Pause" when animation starts
+		});
 	});
-
-	// 3) Start animation
-	smoothAnimateMarker();
 
 	// Add labels
 	new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow' })
@@ -265,7 +320,7 @@ map.on('load', () => {
 		.setText("Abiko Station")
 		.addTo(map);
 
-	new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow' })
+	new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow marker-label-destination' })
 		.setLngLat(route.geometry.coordinates[route.geometry.coordinates.length - 1])
 		// add images/LOGO.svg in the text box
 		.setHTML('<img src="images/LOGO.svg" alt="LOGO" width="100" height="40">')

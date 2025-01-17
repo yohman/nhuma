@@ -9,15 +9,18 @@
 </head>
 <body>
 	<div id="map"></div>
-	<div class="controls">
-		<button id="play">▶</button>
-		<button id="pause">⏸</button>
-		<button id="restart">🔄</button>
+	<div id="sliderContainer">
+		<button id="playPauseButton">Play</button>
+		<input type="range" id="progressSlider" min="0" max="100" value="0">
 	</div>
 
-	<style>
+	<!-- Add the central play button -->
+	<div id="startButton" class="start-button">
+		<span style="position: relative; top: 2px; left: 4px;">&#9658;</span>  <!-- Play icon -->
+	</div>
 
-	</style>
+	<style></style>
+
 	<script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
 	<script src="js/map.js"></script>
 </body>
