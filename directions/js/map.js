@@ -155,7 +155,11 @@ map.on('load', () => {
 
 	// Smooth marker animation
 	let progress = 0; // Between 0 and 1
-	const animationSpeed = 0.0009; // Set the animation speed (default is slower)
+	let direction = 1; // 1 for forward, -1 for reverse
+	let animationSpeed = 0.0009; // Initial speed
+	const minSpeed = -0.003; // Maximum reverse speed
+	const maxSpeed = 0.003; // Maximum forward speed
+	const speedStep = 0.0003; // Speed change per arrow key press
 
 	function interpolate(p1, p2, t) {
 		return [p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1])];
@@ -168,7 +172,8 @@ map.on('load', () => {
 		.addTo(map);
 
 	function updateMarkerLabel() {
-		const totalSeconds = Math.floor(progress / animationSpeed);
+		// Update timing calculation to account for direction
+		const totalSeconds = Math.floor(Math.abs(progress / animationSpeed));
 		const minutes = Math.floor(totalSeconds / 60);
 		const seconds = totalSeconds % 60;
 
@@ -227,19 +232,31 @@ map.on('load', () => {
 			// zoom: 16 // Removed to keep user's zoom level
 		});
 
-		// Always update slider value
-		slider.value = (progress * 100).toFixed(0);
+		 // Update slider value with higher precision
+		slider.value = progress * 1000;
 
-		if (!isPaused && progress < 1) {
-			progress += animationSpeed;
-			if (progress > 1) progress = 1;
-			animationId = requestAnimationFrame(smoothAnimateMarker);
-		} else if (progress >= 1) {
-			// Snap to final destination and slider = 100
-			progress = 1;
-			marker.setLngLat(route.geometry.coordinates[route.geometry.coordinates.length - 1]);
-			slider.value = 100;
-			playPauseButton.textContent = 'Replay'; // Set button to "Replay" when animation ends
+		if (!isPaused) {
+			if ((progress < 1 && direction > 0) || (progress > 0 && direction < 0)) {
+				progress += (direction * Math.abs(animationSpeed));
+				if (progress > 1) progress = 1;
+				if (progress < 0) {
+					progress = 0;
+					direction = 1; // Switch to forward direction
+					animationSpeed = Math.abs(animationSpeed); // Make speed positive
+					isPaused = true; // Pause the animation
+					pausedByButton = true;
+					playPauseButton.textContent = 'Play';
+					if (animationId) cancelAnimationFrame(animationId);
+					return;
+				}
+				animationId = requestAnimationFrame(smoothAnimateMarker);
+			} else {
+				// Stop at endpoints
+				progress = direction > 0 ? 1 : 0;
+				marker.setLngLat(route.geometry.coordinates[progress === 1 ? route.geometry.coordinates.length - 1 : 0]);
+				slider.value = progress * 1000;
+				playPauseButton.textContent = 'Replay';
+			}
 		}
 	}
 
@@ -277,8 +294,8 @@ map.on('load', () => {
 	});
 
 	slider.addEventListener('input', (e) => {
-		// Convert slider value [0..100] to progress [0..1]
-		progress = e.target.value / 100;
+		// Convert slider value [0..1000] to progress [0..1]
+		progress = parseFloat(e.target.value) / 1000;
 		smoothAnimateMarker(true); // true indicates manual slider move
 	});
 
@@ -290,29 +307,27 @@ map.on('load', () => {
 		}
 	});
 
-	// Add event listener for the central play button
-	const startButton = document.getElementById('startButton');
-	startButton.addEventListener('click', () => {
-		// Hide the start button
+	function startButtonHandler() {
 		startButton.style.display = 'none';
-		
-		 // Show the slider container
-        document.getElementById('sliderContainer').style.display = 'flex';
-		
-		// Fly to the start location
+		document.getElementById('sliderContainer').style.display = 'flex';
 		map.flyTo({
 			center: route.geometry.coordinates[0],
 			zoom: 16,
 			speed: 0.5,
 			curve: 1
 		});
-
-		// Start the animation after flyTo completes
 		map.once('moveend', () => {
 			animationId = requestAnimationFrame(smoothAnimateMarker);
-			playPauseButton.textContent = 'Pause'; // Set button to "Pause" when animation starts
+			playPauseButton.textContent = 'Pause';
 		});
-	});
+	}
+
+	// Add event listener for the central play button
+	const startButton = document.getElementById('startButton');
+
+	startButton.addEventListener('click', startButtonHandler);
+
+
 
 	// Add labels
 	new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow' })
@@ -337,4 +352,35 @@ map.on('load', () => {
 	.setLngLat([140.01317800254907,35.86195222857434])
 		.setText("Teganuma Lake")
 		.addTo(map);
+
+	// Add keyboard controls
+	document.addEventListener('keydown', (e) => {
+		if (e.code === 'Space') {
+			e.preventDefault();
+			const startButton = document.getElementById('startButton');
+			if (startButton.style.display !== 'none') {
+				startButtonHandler();
+			} else {
+				playPauseButton.click();
+			}
+		} else if (!isPaused) { // Only handle arrow keys if not paused
+			if (e.code === 'ArrowLeft' && progress > 0) {
+				e.preventDefault();
+				if (direction === 1) {
+					direction = -1;
+					animationSpeed = speedStep;
+				} else {
+					animationSpeed = Math.min(Math.abs(animationSpeed) + speedStep, Math.abs(minSpeed));
+				}
+			} else if (e.code === 'ArrowRight' && progress < 1) {
+				e.preventDefault();
+				if (direction === -1) {
+					direction = 1;
+					animationSpeed = speedStep;
+				} else {
+					animationSpeed = Math.min(animationSpeed + speedStep, maxSpeed);
+				}
+			}
+		}
+	});
 });

@@ -75,7 +75,16 @@ body {
     display: none; /* Hide the slider container initially */
     align-items: center;
     gap: 10px; /* Add spacing between button and slider */
+    min-width: 300px; /* Add minimum width */
 }
+
+.slider-track-container {
+    position: relative;
+    flex-grow: 1; /* Use flexbox growing instead of width */
+    min-width: 0; /* Allow container to shrink */
+}
+
+/* Remove #walkingGif styles */
 
 #progressSlider {
     -webkit-appearance: none;
@@ -89,20 +98,22 @@ body {
 #progressSlider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
-    background: #FF5A16; /* Slider handle color */
-    border: 2px solid white; /* White circle inside */
+    width: 25px;
+    height: 25px;
+    background: #fff url('../images/walk.gif') center center no-repeat;
+    background-size: 20px 20px;
+    border: 2px solid #FF5A16;
     border-radius: 50%;
     cursor: pointer;
     position: relative;
 }
 
 #progressSlider::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: #FF5A16; /* Slider handle color */
-    border: 2px solid white; /* White circle inside */
+    width: 25px;
+    height: 25px;
+    background: #fff url('../images/walk.gif') center center no-repeat;
+    background-size: 20px 20px;
+    border: 2px solid #FF5A16;
     border-radius: 50%;
     cursor: pointer;
     position: relative;
