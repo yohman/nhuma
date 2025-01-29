@@ -16,8 +16,8 @@
 
 .year-marker {
     position: absolute;
-    width: 40px;
-    height: 40px;
+    width: 32px;  /* Reduced from 40px */
+    height: 32px;  /* Reduced from 40px */
     transform: translate(-50%, 0);
     background-color: var(--route-color);
     border: 2px solid white;
@@ -26,28 +26,31 @@
     align-items: center;
     justify-content: center;
     color: white;
-    font-size: 8px;
-    font-family: 'Orbitron', sans-serif;
-    font-weight: 800;
-    letter-spacing: 1px;
+    font-size: 10px;
+    font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-weight: 400;  /* Lighter weight for narrower appearance */
+    letter-spacing: -0.5px;  /* Tighter letter spacing */
     cursor: pointer;
     box-shadow: 0 0 4px rgba(0,0,0,0.3);
-    transition: transform 0.2s, background-color 0.3s;  /* Add transition for background-color */
-    z-index: 2;  /* Ensure markers are above slider */
+    transition: transform 0.2s, background-color 0.3s, z-index 0s;
+    z-index: 2;
 }
 
 .year-marker.selected {
     background-color: white;
     color: var(--route-color);
     transform: translate(-50%, 0) scale(1.1);
+    z-index: 4;  /* Selected marker always on top */
 }
 
 .year-marker.selected:hover {
     transform: translate(-50%, 0) scale(1.2);
+    z-index: 4;  /* Maintain top position when selected and hovered */
 }
 
 .year-marker:hover {
     transform: translate(-50%, 0) scale(1.1);
+    z-index: 3;  /* Bring hovered marker above others */
 }
 
 #timeSlider {

@@ -1,15 +1,57 @@
 mapboxgl.accessToken = 'pk.eyJ1IjoieW9oamFwYW4iLCJhIjoiY2xnYnRoOGVmMDFsbTNtbzR0eXV6a2IwZCJ9.kJYURwlqIx_cpXvi66N0uw';
 
+// Project configurations
+const nhuma = {
+    startLabel: '我孫子駅',
+    endLabel: 'NHUMA',
+    endLogo: 'images/nhuma.svg',
+    routeColor: '#FF5A16',
+    geojsonFile: 'nhuma.geojson',
+    year: 1984,
+    timelineYears: [1961, 1974, 1979, 1984, 1987, 2008, 2019, 2023]
+};
+
+const reitaku = {
+    startLabel: '南柏駅',
+    endLabel: '麗澤大学',
+    endLogo: 'images/reitaku.svg',
+    routeColor: '#005B49',
+    geojsonFile: 'reitaku.geojson',
+    year: 1984,
+    timelineYears: [1961, 1974, 1979, 1984, 1987, 2008, 2012, 2014, 2019, 2023]
+};
+
+// Function to get URL parameters
+function getUrlParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
+// Select configuration based on URL parameter
+let config = nhuma; // Default configuration
+const routeParam = getUrlParam('route');
+
+if (routeParam) {
+    // Check if the parameter matches any project configuration
+    const configMap = {
+        'nhuma': nhuma,
+        'reitaku': reitaku
+    };
+    
+    config = configMap[routeParam.toLowerCase()] || nhuma;
+}
+
+// Set CSS variable for the route color
+document.documentElement.style.setProperty('--route-color', config.routeColor);
+
 // Setup parameters
-const startLabel = '我孫子駅'; // Label for the start point
-const endLabel = 'NHUMA'; // Label for the end point
-const endLogo = 'images/nhuma.svg'; // Logo for the end point
-const routeColor = '#FF5A16'; // Color of the route
-const geojsonfile = 'nhuma.geojson'; // GeoJSON file for the route
-let year = 1984; // Year for the route
-
-const timelineYears = [1961, 1974, 1979, 1984, 1987, 2008, 2019, 2023]; // Timeline years
-
+const startLabel = config.startLabel; // Label for the start point
+const endLabel = config.endLabel; // Label for the end point
+const endLogo = config.endLogo; // Logo for the end point
+const routeColor = config.routeColor; // Color of the route
+const geojsonfile = config.geojsonFile; // GeoJSON file for the route
+let year = config.year; // Year for the route
+const timelineYears = config.timelineYears; // Timeline years
 
 // Animation speed parameters
 const defaultSpeed = 0.001; // Default animation speed
