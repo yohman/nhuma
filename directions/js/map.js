@@ -160,7 +160,7 @@ function initializeRouteLayers() {
             paint: {
                 'line-color': '#ffffff',
                 'line-width': 12,
-                'line-opacity': 0.8
+                'line-opacity': 0.6
             }
         });
     }
@@ -177,7 +177,7 @@ function initializeRouteLayers() {
             paint: {
                 'line-color': routeColor,
                 'line-width': 8,
-                'line-opacity': 0.8
+                'line-opacity': 0.6
             }
         });
     }
@@ -218,7 +218,7 @@ function updateMapStyle(selectedYear) {
 let route, geometry;
 
 // Load route data from GeoJSON file
-fetch('../data/' + geojsonfile)
+fetch('./data/' + geojsonfile)
     .then(response => response.json())
     .then(routeData => {
         route = routeData;
@@ -259,7 +259,7 @@ function initializeMap() {
       paint: {
         'line-color': '#ffffff',
         'line-width': 12,
-        'line-opacity': 0.8
+        'line-opacity': 0.6
       }
     });
 
@@ -272,7 +272,7 @@ function initializeMap() {
       paint: {
         'line-color': routeColor,
         'line-width': 8,
-        'line-opacity': 0.8
+        'line-opacity': 0.6
       }
     });
 
