@@ -8,7 +8,7 @@ const routeColor = '#FF5A16'; // Color of the route
 const geojsonfile = 'nhuma.geojson'; // GeoJSON file for the route
 let year = 1984; // Year for the route
 
-const timelineYears = [1961, 1974, 1984, 2008, 2019, 2023]; // Timeline years
+const timelineYears = [1961, 1974, 1979, 1984, 1987, 2008, 2019, 2023]; // Timeline years
 
 
 // Animation speed parameters
