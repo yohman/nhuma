@@ -154,23 +154,65 @@ const yearMarkersContainer = document.getElementById('yearMarkers');
 const timeSlider = document.getElementById('timeSlider');
 const startyear = 1960;
 const endyear = 2025;
-// Create year markers
-timelineYears.forEach(markerYear => {
+
+// Add these functions before creating year markers
+function getMarkerPosition(year) {
+    return ((year - startyear) / (endyear - startyear)) * 100;
+}
+
+function adjustMarkerPositions(years) {
+    const minGap = 5; // Minimum gap between markers in percentage
+    const positions = years.map(year => ({
+        year,
+        originalPos: getMarkerPosition(year),
+        pos: getMarkerPosition(year)
+    }));
+
+    // Sort by position
+    positions.sort((a, b) => a.pos - b.pos);
+
+    // Adjust positions to maintain minimum gap
+    for (let i = 1; i < positions.length; i++) {
+        const prev = positions[i - 1];
+        const curr = positions[i];
+        const gap = curr.pos - prev.pos;
+
+        if (gap < minGap) {
+            // If too close, push current marker right
+            const push = minGap - gap;
+            curr.pos += push;
+
+            // Push all subsequent markers by the same amount
+            for (let j = i + 1; j < positions.length; j++) {
+                positions[j].pos += push;
+            }
+        }
+    }
+
+    // If last marker is beyond 100%, scale everything back
+    if (positions[positions.length - 1].pos > 100) {
+        const scale = 100 / positions[positions.length - 1].pos;
+        positions.forEach(p => p.pos *= scale);
+    }
+
+    return positions;
+}
+
+// Replace the year markers creation code with this:
+const adjustedPositions = adjustMarkerPositions(timelineYears);
+adjustedPositions.forEach(({ year, pos }) => {
     const marker = document.createElement('div');
     marker.className = 'year-marker';
-    if (markerYear === year) {
+    if (year === config.year) {
         marker.classList.add('selected');
     }
-    marker.textContent = markerYear;
-    const position = ((markerYear - startyear) / (endyear - startyear)) * 100;
-    marker.style.left = `${position}%`;
+    marker.textContent = year;
+    marker.style.left = `${pos}%`;
     marker.addEventListener('click', () => {
-        // Remove selected class from all markers
         document.querySelectorAll('.year-marker').forEach(m => m.classList.remove('selected'));
-        // Add selected class to clicked marker
         marker.classList.add('selected');
-        timeSlider.value = markerYear;
-        updateMapStyle(markerYear);
+        timeSlider.value = year;
+        updateMapStyle(year);
     });
     yearMarkersContainer.appendChild(marker);
 });
