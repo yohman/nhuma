@@ -3,7 +3,7 @@ mapboxgl.accessToken = 'pk.eyJ1IjoieW9oamFwYW4iLCJhIjoiY2xnYnRoOGVmMDFsbTNtbzR0e
 // Setup parameters
 const startLabel = '我孫子駅'; // Label for the start point
 const endLabel = 'NHUMA'; // Label for the end point
-const endLogo = 'images/logo.svg'; // Logo for the end point
+const endLogo = 'images/nhuma.svg'; // Logo for the end point
 const routeColor = '#FF5A16'; // Color of the route
 const geojsonfile = 'nhuma.geojson'; // GeoJSON file for the route
 let year = 1984; // Year for the route
