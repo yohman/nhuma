@@ -268,3 +268,24 @@ body {
 	background-color: var(--route-color, #FF5A16); /* Use CSS variable with fallback */
 	transform: translate(-50%, -50%) scale(1.1);
 }
+
+/* ...existing code... */
+
+.map-label .mapboxgl-popup-content {
+    font-style: italic;
+    color: white;
+    background: none;
+    padding: 0;
+    border: none;
+}
+
+.map-label {
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+/* Add dynamic font size support */
+[data-fontsize="25"] .mapboxgl-popup-content {
+    font-size: 25px;
+}
+
+/* ...rest of existing code... */
