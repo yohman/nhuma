@@ -56,6 +56,42 @@ if (routeParam) {
 		config = configMap[routeParam.toLowerCase()] || nhuma;
 }
 
+// Override configuration with URL parameters if they exist
+const urlParams = new URLSearchParams(window.location.search);
+const paramOverrides = {
+    startLabel: urlParams.get('start'),
+    endLabel: urlParams.get('end'),
+    endLogo: urlParams.get('logo'),
+    routeColor: urlParams.get('color'),
+    geojsonFile: urlParams.get('geojson'),
+    year: parseInt(urlParams.get('year')),
+    timelineYears: urlParams.get('years') ? urlParams.get('years').split(',').map(Number) : null
+};
+
+// Apply overrides if parameters exist
+Object.keys(paramOverrides).forEach(key => {
+    if (paramOverrides[key] !== null && paramOverrides[key] !== undefined) {
+        if (key === 'routeColor' && !paramOverrides[key].startsWith('#')) {
+            config[key] = '#' + paramOverrides[key]; // Ensure color has # prefix
+        } else {
+            config[key] = paramOverrides[key];
+        }
+    }
+});
+
+// Handle mapLabels separately as it needs special parsing
+const mapLabelsParam = urlParams.get('labels');
+if (mapLabelsParam) {
+    try {
+        config.mapLabels = JSON.parse(decodeURIComponent(mapLabelsParam));
+    } catch (e) {
+        console.error('Error parsing mapLabels parameter:', e);
+    }
+}
+
+// Update page title with configuration values
+document.title = `Directions from ${config.startLabel} to ${config.endLabel}`;
+
 // Set CSS variable for the route color
 document.documentElement.style.setProperty('--route-color', config.routeColor);
 
