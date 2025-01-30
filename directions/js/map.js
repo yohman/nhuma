@@ -152,8 +152,8 @@ const map = new mapboxgl.Map({
 // Timeline initialization
 const yearMarkersContainer = document.getElementById('yearMarkers');
 const timeSlider = document.getElementById('timeSlider');
-const startyear = 1960;
-const endyear = 2025;
+const startyear = config.timelineYears[0];
+const endyear = config.timelineYears[config.timelineYears.length - 1];
 
 // Add these functions before creating year markers
 function getMarkerPosition(year) {
@@ -161,7 +161,7 @@ function getMarkerPosition(year) {
 }
 
 function adjustMarkerPositions(years) {
-    const minGap = 5; // Minimum gap between markers in percentage
+    const minGap = 15; // Minimum gap between markers in percentage
     const positions = years.map(year => ({
         year,
         originalPos: getMarkerPosition(year),
