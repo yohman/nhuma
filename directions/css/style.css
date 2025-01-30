@@ -286,10 +286,11 @@ body {
     font-weight: 100;
     border: none;
     opacity: 0.7;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .0);
 }
 
 .map-label {
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    text-shadow: 2px 2px 2px rgba(0,0,0,0.3);
 }
 
 /* Add dynamic font size support */

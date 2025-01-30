@@ -197,7 +197,7 @@ const mapStyle = getMapStyle(year);
 const map = new mapboxgl.Map({
 		container: 'map',
 		style: mapStyle,
-		zoom: 15
+		zoom: 10
 });
 
 // Timeline initialization
@@ -251,21 +251,29 @@ function adjustMarkerPositions(years) {
 
 // Replace the year markers creation code with this:
 const adjustedPositions = adjustMarkerPositions(timelineYears);
+// Find the closest year to highlight initially
+const initialYear = year;
+const closestYear = timelineYears.reduce((prev, curr) => {
+    return Math.abs(curr - initialYear) < Math.abs(prev - initialYear) ? curr : prev;
+});
+
 adjustedPositions.forEach(({ year, pos }) => {
-		const marker = document.createElement('div');
-		marker.className = 'year-marker';
-		if (year === config.year) {
-				marker.classList.add('selected');
-		}
-		marker.textContent = year;
-		marker.style.left = `${pos}%`;
-		marker.addEventListener('click', () => {
-				document.querySelectorAll('.year-marker').forEach(m => m.classList.remove('selected'));
-				marker.classList.add('selected');
-				timeSlider.value = year;
-				updateMapStyle(year);
-		});
-		yearMarkersContainer.appendChild(marker);
+    const marker = document.createElement('div');
+    marker.className = 'year-marker';
+    // Highlight the closest year to the initial year
+    if (year === closestYear) {
+        marker.classList.add('selected');
+        timeSlider.value = year;
+    }
+    marker.textContent = year;
+    marker.style.left = `${pos}%`;
+    marker.addEventListener('click', () => {
+        document.querySelectorAll('.year-marker').forEach(m => m.classList.remove('selected'));
+        marker.classList.add('selected');
+        timeSlider.value = year;
+        updateMapStyle(year);
+    });
+    yearMarkersContainer.appendChild(marker);
 });
 
 // Remove this event listener since we're not using the slider directly anymore
@@ -315,104 +323,125 @@ function initializeRouteLayers() {
 								'line-opacity': 0.6
 						}
 				});
+			}
 		}
-}
-
-function updateMapStyle(selectedYear) {
-	console.log("time warp to " + selectedYear);
-		const newStyle = getMapStyle(selectedYear);
 		
-		if (typeof newStyle === 'string') {
-				map.setStyle(newStyle);
-		} else {
-				map.setStyle(newStyle);
+		let route, geometry;
+		let marker, markerLabel;  // Declare these at the top level
+		
+		function updateMapStyle(selectedYear) {
+			console.log("time warp to " + selectedYear);
+			const newStyle = getMapStyle(selectedYear);
+			
+			 // Store the current map center and zoom
+			const currentCenter = map.getCenter();
+			const currentZoom = map.getZoom();
+		
+			// Update style
+			map.setStyle(typeof newStyle === 'string' ? newStyle : newStyle);
+		
+			// Wait for the style to load before re-adding layers and markers
+			map.once('style.load', () => {
+				console.log("style loaded");
+		
+				// Restore the map view
+				map.setCenter(currentCenter);
+				map.setZoom(currentZoom);
+		
+				// Always remove existing layers first
+				if (map.getLayer('route')) map.removeLayer('route');
+				if (map.getLayer('route-outline')) map.removeLayer('route-outline');
+				if (map.getSource('route')) map.removeSource('route');
+		
+				// Add the route source
+				map.addSource('route', {
+					type: 'geojson',
+					data: route
+				});
+		
+				// Add route outline
+				map.addLayer({
+					id: 'route-outline',
+					type: 'line',
+					source: 'route',
+					layout: {
+						'line-cap': 'round',
+						'line-join': 'round'
+					},
+					paint: {
+						'line-color': '#ffffff',
+						'line-width': 12,
+						'line-opacity': 0.6
+					}
+				});
+		
+				// Add route line
+				map.addLayer({
+					id: 'route',
+					type: 'line',
+					source: 'route',
+					layout: {
+						'line-cap': 'round',
+						'line-join': 'round'
+					},
+					paint: {
+						'line-color': routeColor,
+						'line-width': 8,
+						'line-opacity': 0.6
+					}
+				});
+				
+				// Re-add moving marker if it exists
+				if (marker) {
+					marker.addTo(map);
+				}
+				
+				// Re-add marker label if it exists
+				if (markerLabel) {
+					markerLabel.addTo(map);
+				}
+		
+				// Re-add route start/end labels
+				addRouteLabels();
+		
+				// Re-add map labels
+				if (config.mapLabels) {
+					addMapLabels();
+				}
+			});
+		
+			// Update the year variable
+			year = selectedYear;
+
+			initializeRouteLayers()
 		}
-
-	initializeRouteLayers();
-		// Wait for the style to load before re-adding layers
-		map.once('style.load', () => {
-		console.log("style loaded");
-				// Initialize route layers
-				initializeRouteLayers();
-				
-				// Re-add marker if it exists
-				if (typeof marker !== 'undefined') {
-						marker.addTo(map);
-				}
-				
-				// Re-add popups if they exist
-				if (typeof markerLabel !== 'undefined') {
-						markerLabel.addTo(map);
-				}
-		});
-
-		// Update the year variable
-		year = selectedYear;
-}
-
-let route, geometry;
-
-// Load route data from GeoJSON file
-fetch('./data/' + geojsonfile)
-		.then(response => response.json())
-		.then(routeData => {
-				route = routeData;
-				console.log(route);
-				geometry = route.features[0].geometry;
-
-				// Calculate and set the center
-				const center = calculateCenter(geometry.coordinates);
-				map.setCenter(center);
-
-				// Define the walking route bounds
-				const bounds = new mapboxgl.LngLatBounds();
-				route.features[0].geometry.coordinates.forEach(coord => bounds.extend(coord));
-
-				// Fit map to route bounds
-				map.fitBounds(bounds, { padding: 100 });
-
-				// Initialize the map with the route
-				initializeMap();
-		})
-		.catch(error => console.error('Error loading route:', error));
-
-// Move all the map initialization code into a function
-function initializeMap() {
-	map.on('load', () => {
-		// Add the route as a source
-		map.addSource('route', {
-			type: 'geojson',
-			data: route
-		});
-
-		// Add white outline layer
-		map.addLayer({
-			id: 'route-outline',
-			type: 'line',
-			source: 'route',
-			layout: { 'line-cap': 'round', 'line-join': 'round' },
-			paint: {
-				'line-color': '#ffffff',
-				'line-width': 12,
-				'line-opacity': 0.6
-			}
-		});
-
-		// Add the colored route layer on top
-		map.addLayer({
-			id: 'route',
-			type: 'line',
-			source: 'route',
-			layout: { 'line-cap': 'round', 'line-join': 'round' },
-			paint: {
-				'line-color': routeColor,
-				'line-width': 8,
-				'line-opacity': 0.6
-			}
-		});
-
-		// Add map labels if they exist in the configuration
-		if (config.mapLabels) {
+		
+		// Add these helper functions
+		function addRouteLabels() {
+				// Add start label
+				new mapboxgl.Popup({
+						offset: 25,
+						className: 'popup-no-arrow',
+						closeButton: false,
+						closeOnClick: false
+				})
+				.setLngLat(geometry.coordinates[0])
+				.setText(startLabel)
+				.addTo(map);
+		
+				// Add end label
+				new mapboxgl.Popup({
+						offset: 25,
+						className: 'popup-no-arrow marker-label-destination',
+						closeButton: false,
+						closeOnClick: false
+				})
+				.setLngLat(geometry.coordinates[geometry.coordinates.length - 1])
+				.setHTML('<img src="' + endLogo + '" alt="' + endLabel + '" width="100" height="40">')
+				.addTo(map);
+		}
+		
+		function addMapLabels() {
 				config.mapLabels.forEach(label => {
 						const popup = new mapboxgl.Popup({
 								offset: 25,
@@ -423,271 +452,346 @@ function initializeMap() {
 						.setLngLat([label.lon, label.lat])
 						.setText(label.text)
 						.addTo(map);
-
-						// Set font size if specified
+		
 						if (label.fontSize) {
 								const popupElement = popup.getElement();
 								popupElement.style.fontSize = `${label.fontSize}px`;
 						}
 				});
 		}
-
-		// Create a moving marker
-		const marker = new mapboxgl.Marker({ 
-			color: routeColor,
-			element: createMarkerElement()
-		})
-		.setLngLat(geometry.coordinates[0])
-		.addTo(map);
-
-		// Add this helper function to create a custom marker element with white border
-		function createMarkerElement() {
-			const el = document.createElement('div');
-			el.className = 'mapboxgl-marker';
-			el.style.backgroundColor = '#ffffff';  // Changed to white background
-			el.style.width = '30px';
-			el.style.height = '30px';
-			el.style.borderRadius = '50%';
-			el.style.border = `3px solid ${routeColor}`;  // Using routeColor for border
-			el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
-			el.style.backgroundImage = "url('../images/walk.gif')";
-			el.style.backgroundPosition = 'center';
-			el.style.backgroundRepeat = 'no-repeat';
-			el.style.backgroundSize = '20px 20px';
-			return el;
-		}
-
-		// Smooth marker animation
-		let progress = 0; // Between 0 and 1
-		let direction = 1; // 1 for forward, -1 for reverse
-		let animationSpeed = defaultSpeed;  // Initialize with default speed
-
-		function interpolate(p1, p2, t) {
-			return [p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1])];
-		}
-
-		// Create a label for the marker
-		const markerLabel = new mapboxgl.Popup({ offset: 0, className: 'popup-no-arrow marker-label' })
-			.setLngLat(geometry.coordinates[0])
-			.setText("0 seconds")
-			.addTo(map);
-
-		function calculateRouteLength() {
-			let totalLength = 0;
-			for (let i = 1; i < geometry.coordinates.length; i++) {
-					const from = geometry.coordinates[i - 1];
-					const to = geometry.coordinates[i];
-					// Calculate distance in meters
-					const distance = turf.distance(
-							turf.point(from),
-							turf.point(to),
-							{ units: 'meters' }
-					);
-					totalLength += distance;
-			}
-			return totalLength;
-		}
-
-		function updateMarkerLabel() {
-			const routeLength = calculateRouteLength();
-			const distanceCovered = progress * routeLength;
-			const timeInSeconds = distanceCovered / METERS_PER_SECOND;
-			const minutes = Math.floor(timeInSeconds / 60);
-			const seconds = Math.floor(timeInSeconds % 60);
-			
-			const roundedDistanceInMeters = Math.round(distanceCovered);
-			markerLabel.setText(`${minutes}分${seconds}秒, ${roundedDistanceInMeters}m`);
-			markerLabel.setLngLat(marker.getLngLat());
-		}
-
-		let isPaused = false;
-		let pausedByButton = false;
-		let animationId;
-
-		function smoothAnimateMarker(manual = false) {
-			const totalDistance = geometry.coordinates.reduce((acc, curr, index, arr) => {
-				if (index === 0) return acc;
-				const prev = arr[index - 1];
-				const distance = Math.sqrt(Math.pow(curr[0] - prev[0], 2) + Math.pow(curr[1] - prev[1], 2));
-				return acc + distance;
-			}, 0);
-
-			const distanceCovered = progress * totalDistance;
-			let distanceSum = 0;
-			let segment = 0;
-
-			for (let i = 1; i < geometry.coordinates.length; i++) {
-				const start = geometry.coordinates[i - 1];
-				const end = geometry.coordinates[i];
-				const segmentDistance = Math.sqrt(Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2));
-				if (distanceSum + segmentDistance >= distanceCovered) {
-					segment = i - 1;
-					break;
+		
+		// Load route data from GeoJSON file
+		fetch('./data/' + geojsonfile)
+				.then(response => response.json())
+				.then(routeData => {
+						route = routeData;
+						console.log(route);
+						geometry = route.features[0].geometry;
+		
+						// Calculate and set the center
+						const center = calculateCenter(geometry.coordinates);
+						map.setCenter(center);
+		
+						// Define the walking route bounds
+						const bounds = new mapboxgl.LngLatBounds();
+						route.features[0].geometry.coordinates.forEach(coord => bounds.extend(coord));
+		
+						// Fit map to route bounds
+						map.fitBounds(bounds, { padding: 100 });
+		
+						// Initialize the map with the route
+						initializeMap();
+				})
+				.catch(error => console.error('Error loading route:', error));
+		
+		// Move all the map initialization code into a function
+		function initializeMap() {
+			map.on('load', () => {
+				// Add route layers
+				initializeRouteLayers();
+		
+				// Add route labels (start and end)
+				addRouteLabels();
+		
+				// Add map labels if they exist
+				if (config.mapLabels) {
+						addMapLabels();
 				}
-				distanceSum += segmentDistance;
-			}
-
-			const start = geometry.coordinates[segment];
-			const end = geometry.coordinates[segment + 1];
-			const segmentDistance = Math.sqrt(Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2));
-			const t = (distanceCovered - distanceSum) / segmentDistance;
-
-			marker.setLngLat(interpolate(start, end, t));
-			updateMarkerLabel();
-			// Replace setCenter with jumpTo without altering zoom level
-			map.jumpTo({
-				center: marker.getLngLat()
-				// zoom: 16 // Removed to keep user's zoom level
-			});
-
-			// Update slider value with higher precision
-			slider.value = progress * 1000;
-
-			if (!isPaused) {
-				if ((progress < 1 && direction > 0) || (progress > 0 && direction < 0)) {
-					progress += (direction * Math.abs(animationSpeed));
-					if (progress > 1) progress = 1;
-					if (progress < 0) {
+		
+				// Create a moving marker (now assigned to module-level variable)
+				marker = new mapboxgl.Marker({ 
+					color: routeColor,
+					element: createMarkerElement()
+				})
+				.setLngLat(geometry.coordinates[0])
+				.addTo(map);
+		
+				// Add this helper function to create a custom marker element with white border
+				function createMarkerElement() {
+					const el = document.createElement('div');
+					el.className = 'mapboxgl-marker';
+					el.style.backgroundColor = '#ffffff';  // Changed to white background
+					el.style.width = '30px';
+					el.style.height = '30px';
+					el.style.borderRadius = '50%';
+					el.style.border = `3px solid ${routeColor}`;  // Using routeColor for border
+					el.style.boxShadow = '0 0 4px rgba(0,0,0,0.3)';
+					el.style.backgroundImage = "url('../images/walk.gif')";
+					el.style.backgroundPosition = 'center';
+					el.style.backgroundRepeat = 'no-repeat';
+					el.style.backgroundSize = '20px 20px';
+					el.style.pointerEvents = 'none'; // Disable pointer events on the marker
+					return el;
+				}
+		
+				// Smooth marker animation
+				let progress = 0; // Between 0 and 1
+				let direction = 1; // 1 for forward, -1 for reverse
+				let animationSpeed = defaultSpeed;  // Initialize with default speed
+		
+				function interpolate(p1, p2, t) {
+					return [p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1])];
+				}
+		
+				// Create a label for the marker (now assigned to module-level variable)
+				markerLabel = createMarkerLabel()
+					.setLngLat(geometry.coordinates[0])
+					.setText("0 seconds")
+					.addTo(map);
+		
+				// Add map interaction handlers
+				map.on('click', () => {
+					if (markerLabel) {
+						markerLabel.addTo(map);
+					}
+				});
+		
+				map.on('drag', () => {
+					if (markerLabel) {
+						markerLabel.addTo(map);
+					}
+				});
+		
+				map.on('zoom', () => {
+					if (markerLabel) {
+						markerLabel.addTo(map);
+					}
+				});
+		
+				function calculateRouteLength() {
+					let totalLength = 0;
+					for (let i = 1; i < geometry.coordinates.length; i++) {
+							const from = geometry.coordinates[i - 1];
+							const to = geometry.coordinates[i];
+							// Calculate distance in meters
+							const distance = turf.distance(
+									turf.point(from),
+									turf.point(to),
+									{ units: 'meters' }
+							);
+							totalLength += distance;
+					}
+					return totalLength;
+				}
+		
+				function updateMarkerLabel() {
+					const routeLength = calculateRouteLength();
+					const distanceCovered = progress * routeLength;
+					const timeInSeconds = distanceCovered / METERS_PER_SECOND;
+					const minutes = Math.floor(timeInSeconds / 60);
+					const seconds = Math.floor(timeInSeconds % 60);
+					
+					const roundedDistanceInMeters = Math.round(distanceCovered);
+					markerLabel.setText(`${minutes}分${seconds}秒, ${roundedDistanceInMeters}m`);
+					markerLabel.setLngLat(marker.getLngLat());
+				}
+		
+				let isPaused = false;
+				let pausedByButton = false;
+				let animationId;
+		
+				function smoothAnimateMarker(manual = false) {
+					const totalDistance = geometry.coordinates.reduce((acc, curr, index, arr) => {
+						if (index === 0) return acc;
+						const prev = arr[index - 1];
+						const distance = Math.sqrt(Math.pow(curr[0] - prev[0], 2) + Math.pow(curr[1] - prev[1], 2));
+						return acc + distance;
+					}, 0);
+		
+					const distanceCovered = progress * totalDistance;
+					let distanceSum = 0;
+					let segment = 0;
+		
+					for (let i = 1; i < geometry.coordinates.length; i++) {
+						const start = geometry.coordinates[i - 1];
+						const end = geometry.coordinates[i];
+						const segmentDistance = Math.sqrt(Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2));
+						if (distanceSum + segmentDistance >= distanceCovered) {
+							segment = i - 1;
+							break;
+						}
+						distanceSum += segmentDistance;
+					}
+		
+					const start = geometry.coordinates[segment];
+					const end = geometry.coordinates[segment + 1];
+					const segmentDistance = Math.sqrt(Math.pow(end[0] - start[0], 2) + Math.pow(end[1] - start[1], 2));
+					const t = (distanceCovered - distanceSum) / segmentDistance;
+		
+					marker.setLngLat(interpolate(start, end, t));
+					updateMarkerLabel();
+					// Replace setCenter with jumpTo without altering zoom level
+					map.jumpTo({
+						center: marker.getLngLat()
+						// zoom: 16 // Removed to keep user's zoom level
+					});
+		
+					// Update slider value with higher precision
+					slider.value = progress * 1000;
+		
+					if (!isPaused) {
+						if ((progress < 1 && direction > 0) || (progress > 0 && direction < 0)) {
+							progress += (direction * Math.abs(animationSpeed));
+							if (progress > 1) progress = 1;
+							if (progress < 0) {
+								progress = 0;
+								direction = 1; // Switch to forward direction
+								animationSpeed = Math.abs(animationSpeed); // Make speed positive
+								isPaused = true; // Pause the animation
+								pausedByButton = true;
+								playPauseButton.textContent = 'Play';
+								if (animationId) cancelAnimationFrame(animationId);
+								return;
+							}
+							animationId = requestAnimationFrame(smoothAnimateMarker);
+						} else {
+							// Stop at endpoints
+							progress = direction > 0 ? 1 : 0;
+							marker.setLngLat(geometry.coordinates[progress === 1 ? geometry.coordinates.length - 1 : 0]);
+							slider.value = progress * 1000;
+							playPauseButton.textContent = 'Replay';
+						}
+					}
+				}
+		
+				const slider = document.getElementById('progressSlider');
+				const playPauseButton = document.getElementById('playPauseButton');
+		
+				playPauseButton.addEventListener('click', () => {
+					if (progress >= 1) {
+						// Restart the animation
 						progress = 0;
-						direction = 1; // Switch to forward direction
-						animationSpeed = Math.abs(animationSpeed); // Make speed positive
-						isPaused = true; // Pause the animation
+						slider.value = 0;
+						marker.setLngLat(geometry.coordinates[0]);
+						markerLabel.setLngLat(geometry.coordinates[0]);
+						markerLabel.setText("0 seconds");
+						isPaused = false;
+						pausedByButton = false;
+						playPauseButton.textContent = 'Pause';
+						animationId = requestAnimationFrame(smoothAnimateMarker);
+					} else if (!isPaused) {
+						isPaused = true;
 						pausedByButton = true;
 						playPauseButton.textContent = 'Play';
 						if (animationId) cancelAnimationFrame(animationId);
-						return;
+					} else {
+						isPaused = false;
+						pausedByButton = false;
+						playPauseButton.textContent = 'Pause';
+						if (progress < 1) animationId = requestAnimationFrame(smoothAnimateMarker);
 					}
-					animationId = requestAnimationFrame(smoothAnimateMarker);
-				} else {
-					// Stop at endpoints
-					progress = direction > 0 ? 1 : 0;
-					marker.setLngLat(geometry.coordinates[progress === 1 ? geometry.coordinates.length - 1 : 0]);
-					slider.value = progress * 1000;
-					playPauseButton.textContent = 'Replay';
+				});
+		
+				slider.addEventListener('mousedown', () => {
+					isPaused = true;
+					if (animationId) cancelAnimationFrame(animationId);
+				});
+		
+				slider.addEventListener('input', (e) => {
+					// Convert slider value [0..1000] to progress [0..1]
+					progress = parseFloat(e.target.value) / 1000;
+					smoothAnimateMarker(true); // true indicates manual slider move
+				});
+		
+				slider.addEventListener('mouseup', () => {
+					if (!pausedByButton && progress < 1) {
+						isPaused = false;
+						playPauseButton.textContent = 'Pause';
+						animationId = requestAnimationFrame(smoothAnimateMarker);
+					}
+				});
+		
+				function startButtonHandler() {
+					startButton.style.display = 'none';
+					document.getElementById('sliderContainer').style.display = 'flex';
+					map.flyTo({
+						center: geometry.coordinates[0],
+						zoom: 16,
+						speed: 0.5,
+						curve: 1
+					});
+					map.once('moveend', () => {
+						animationId = requestAnimationFrame(smoothAnimateMarker);
+						playPauseButton.textContent = 'Pause';
+					});
 				}
-			}
-		}
-
-		const slider = document.getElementById('progressSlider');
-		const playPauseButton = document.getElementById('playPauseButton');
-
-		playPauseButton.addEventListener('click', () => {
-			if (progress >= 1) {
-				// Restart the animation
-				progress = 0;
-				slider.value = 0;
-				marker.setLngLat(geometry.coordinates[0]);
-				markerLabel.setLngLat(geometry.coordinates[0]);
-				markerLabel.setText("0 seconds");
-				isPaused = false;
-				pausedByButton = false;
-				playPauseButton.textContent = 'Pause';
-				animationId = requestAnimationFrame(smoothAnimateMarker);
-			} else if (!isPaused) {
-				isPaused = true;
-				pausedByButton = true;
-				playPauseButton.textContent = 'Play';
-				if (animationId) cancelAnimationFrame(animationId);
-			} else {
-				isPaused = false;
-				pausedByButton = false;
-				playPauseButton.textContent = 'Pause';
-				if (progress < 1) animationId = requestAnimationFrame(smoothAnimateMarker);
-			}
-		});
-
-		slider.addEventListener('mousedown', () => {
-			isPaused = true;
-			if (animationId) cancelAnimationFrame(animationId);
-		});
-
-		slider.addEventListener('input', (e) => {
-			// Convert slider value [0..1000] to progress [0..1]
-			progress = parseFloat(e.target.value) / 1000;
-			smoothAnimateMarker(true); // true indicates manual slider move
-		});
-
-		slider.addEventListener('mouseup', () => {
-			if (!pausedByButton && progress < 1) {
-				isPaused = false;
-				playPauseButton.textContent = 'Pause';
-				animationId = requestAnimationFrame(smoothAnimateMarker);
-			}
-		});
-
-		function startButtonHandler() {
-			startButton.style.display = 'none';
-			document.getElementById('sliderContainer').style.display = 'flex';
-			map.flyTo({
-				center: geometry.coordinates[0],
-				zoom: 16,
-				speed: 0.5,
-				curve: 1
-			});
-			map.once('moveend', () => {
-				animationId = requestAnimationFrame(smoothAnimateMarker);
-				playPauseButton.textContent = 'Pause';
-			});
-		}
-
-		// Add event listener for the central play button
-		const startButton = document.getElementById('startButton');
-
-		startButton.addEventListener('click', startButtonHandler);
-
-		// Add labels
-		new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow' })
-			.setLngLat(geometry.coordinates[0])
-			.setText(startLabel)
-			.addTo(map);
-
-		new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow marker-label-destination' })
-			.setLngLat(geometry.coordinates[geometry.coordinates.length - 1])
-			// add images/LOGO.svg in the text box
-			.setHTML('<img src="' + endLogo + '" alt="' + endLabel + '" width="100" height="40">')
-			.addTo(map);
-
-		// add label to teganuma park
-		// new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow' })
-		// .setLngLat(geometry.coordinates[15])
-		// 	.setText("Teganuma Park")
-		// 	.addTo(map);
-
-		// // add label to teganuma lake 
-		// new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow marker-label-teganuma' })
-		// .setLngLat([140.01317800254907,35.86195222857434])
-		// 	.setText("Teganuma Lake")
-		// 	.addTo(map);
-
-		// Add keyboard controls
-		document.addEventListener('keydown', (e) => {
-			if (e.code === 'Space') {
-				e.preventDefault();
+		
+				// Add event listener for the central play button
 				const startButton = document.getElementById('startButton');
-				if (startButton.style.display !== 'none') {
-					startButtonHandler();
-				} else {
-					playPauseButton.click();
-				}
-			} else if (!isPaused) { // Only handle arrow keys if not paused
-				if (e.code === 'ArrowLeft' && progress > 0) {
-					e.preventDefault();
-					if (direction === 1) {
-						direction = -1;
-						animationSpeed = speedStep;
-					} else {
-						animationSpeed = Math.min(Math.abs(animationSpeed) + speedStep, Math.abs(minSpeed));
+		
+				startButton.addEventListener('click', startButtonHandler);
+		
+				// Add labels
+				new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow' })
+					.setLngLat(geometry.coordinates[0])
+					.setText(startLabel)
+					.addTo(map);
+		
+				new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow marker-label-destination' })
+					.setLngLat(geometry.coordinates[geometry.coordinates.length - 1])
+					// add images/LOGO.svg in the text box
+					.setHTML('<img src="' + endLogo + '" alt="' + endLabel + '" width="100" height="40">')
+					.addTo(map);
+		
+				// add label to teganuma park
+				// new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow' })
+				// .setLngLat(geometry.coordinates[15])
+				// 	.setText("Teganuma Park")
+				// 	.addTo(map);
+		
+				// // add label to teganuma lake 
+				// new mapboxgl.Popup({ offset: 25, className: 'popup-no-arrow marker-label-teganuma' })
+				// .setLngLat([140.01317800254907,35.86195222857434])
+				// 	.setText("Teganuma Lake")
+				// 	.addTo(map);
+		
+				// Add keyboard controls
+				document.addEventListener('keydown', (e) => {
+					if (e.code === 'Space') {
+						e.preventDefault();
+						const startButton = document.getElementById('startButton');
+						if (startButton.style.display !== 'none') {
+							startButtonHandler();
+						} else {
+							playPauseButton.click();
+						}
+					} else if (e.code === 'ArrowLeft') {
+						e.preventDefault();
+						if (progress >= 1) {
+							// If at the end, start playing in reverse
+							direction = -1;
+							animationSpeed = speedStep;
+							isPaused = false;
+							playPauseButton.textContent = 'Pause';
+							requestAnimationFrame(smoothAnimateMarker);
+						} else if (progress > 0) {
+							if (direction === 1) {
+								direction = -1;
+								animationSpeed = speedStep;
+							} else {
+								animationSpeed = Math.min(Math.abs(animationSpeed) + speedStep, Math.abs(minSpeed));
+							}
+						}
+					} else if (e.code === 'ArrowRight' && progress < 1) {
+						e.preventDefault();
+						if (direction === -1) {
+							direction = 1;
+							animationSpeed = speedStep;
+						} else {
+							animationSpeed = Math.min(animationSpeed + speedStep, maxSpeed);
+						}
 					}
-				} else if (e.code === 'ArrowRight' && progress < 1) {
-					e.preventDefault();
-					if (direction === -1) {
-						direction = 1;
-						animationSpeed = speedStep;
-					} else {
-						animationSpeed = Math.min(animationSpeed + speedStep, maxSpeed);
-					}
-				}
+				});
+			});
 			}
-		});
-	});
-}
+		
+		function createMarkerLabel() {
+			return new mapboxgl.Popup({
+				offset: 0,
+				className: 'popup-no-arrow marker-label',
+				closeButton: false,
+				closeOnClick: false,
+				focusAfterOpen: false,
+				anchor: 'bottom'
+			});
+		}
